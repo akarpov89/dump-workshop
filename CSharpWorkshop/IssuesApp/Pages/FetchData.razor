@@ -5,65 +5,51 @@
 
 <button class="btn btn-primary" @onclick="StartLoading">Load issues</button>
 <button class="btn btn-primary" @onclick="CancelLoading">Cancel</button>
+<button class="btn btn-primary" @onclick="CancelLoading2">Cancel2</button>
 
-@if (issues == null)
-{
-    <p>Issues count: @issuesCount</p>
-}
-else
-{
-    <p>Issues count: @issuesCount</p>
+<p>Issues count: @issues.Count</p>
 
-    <table class="table">
-        <thead>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Author</th>
+        <th>Status</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var issue in issues)
+    {
         <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Author</th>
-            <th>Status</th>
+            <td style="max-width: 500px"><a href="@issue.Url" target="_blank">@issue.Title</a></td>
+            <td>@issue.Categorize()</td>
+            <td><a href="@issue.Author?.Url" target="_blank">@issue.Author?.Login</a></td>
+            <td>@issue.State.ToString()</td>
         </tr>
-        </thead>
-        <tbody>
-        @foreach (var issue in issues)
-        {
-            <tr>
-                <td style="max-width: 500px"><a href="@issue.Url" target="_blank">@issue.Title</a></td>
-                <td>@issue.Categorize()</td>
-                <td><a href="@issue.Author?.Url" target="_blank">@issue.Author?.Login</a></td>
-                <td>@(issue.State.ToString())</td>
-            </tr>
-        }
-        </tbody>
-    </table>
-}
+    }
+    </tbody>
+</table>
 
 @code {
-    IEnumerable<Issue> issues;
-    int issuesCount;
+    List<Issue> issues = new List<Issue>();
 
     CancellationTokenSource cts;
+    CancellationTokenSource cts2;
 
     private async void StartLoading()
     {
-        issues = null;
-        issuesCount = 0;
-
-        var progress = new ActionProgress(value =>
-        {
-            InvokeAsync(() =>
-            {
-                issuesCount = value;
-                StateHasChanged();
-            });
-        });
-
+        issues.Clear();
         cts = new CancellationTokenSource();
+        cts2 = new CancellationTokenSource();
 
         try
         {
-            using (var issueService = new GitHubIssueService("dotnet", "roslyn"))
+            await using var issueService = new GitHubIssueService("dotnet", "roslyn");
+
+            await foreach (var issue in issueService.GetIssuesAsync(cts.Token).WithCancellation(cts2.Token))
             {
-                issues = await issueService.GetIssuesAsync(progress, cts.Token);
+                issues.Add(issue);
                 StateHasChanged();
             }
         }
@@ -76,19 +62,8 @@ else
     {
         cts.Cancel();
     }
-
-    private class ActionProgress : IProgress<int>
+    private void CancelLoading2()
     {
-        private readonly Action<int> myOnProgress;
-
-        public ActionProgress(Action<int> onProgress)
-        {
-            myOnProgress = onProgress;
-        }
-
-        public void Report(int value)
-        {
-            myOnProgress(value);
-        }
+        cts2.Cancel();
     }
 }

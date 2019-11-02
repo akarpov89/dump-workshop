@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,14 +11,14 @@ using Newtonsoft.Json.Linq;
 
 namespace IssuesApp.Data
 {
-  public class GitHubIssueService : IIssueService, IDisposable
+  public class GitHubIssueService : IIssueService, IDisposable, IAsyncDisposable
   {
     // Follow these steps to create a GitHub Access Token
     // https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/#creating-a-token
     // Select the following permissions for your GitHub Access Token:
     // - repo:status
     // - public_repo
-    private const string GitHubAccessToken = "7c1813f538fce8faf2f2b090ad659de3d3d9e063";
+    private const string GitHubAccessToken = "c53e0fce24230a5aa33f0e29f6b11b9d8803c8e0";
 
     private readonly string myOwner;
     private readonly string myRepoName;
@@ -32,11 +33,8 @@ namespace IssuesApp.Data
       myHttpClient.DefaultRequestHeaders.Add("User-Agent", "GiHubQuery App");
     }
 
-    public async Task<IEnumerable<Issue>> GetIssuesAsync(IProgress<int>? progress, CancellationToken cancellationToken)
+    public async IAsyncEnumerable<Issue> GetIssuesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-      const int maxIssuesCount = 200;
-      var issues = new List<Issue>();
-
       var request = CreateRequest();
 
       while (true)
@@ -50,25 +48,21 @@ namespace IssuesApp.Data
         foreach (var issueObject in (JArray) issuesResults["nodes"])
         {
           var issue = CreateFromJson((JObject) issueObject);
-          issues.Add(issue);
+          yield return issue;
         }
-
-        progress?.Report(issues.Count);
 
         var issuesPageInfo = (JObject) issuesResults["pageInfo"];
         var hasMorePages = (bool) issuesPageInfo["hasPreviousPage"];
 
-        if (!hasMorePages || issues.Count >= maxIssuesCount)
+        if (!hasMorePages)
         {
-          break;
+          yield break;
         }
 
         request.Variables["start_cursor"] = issuesPageInfo["startCursor"].ToString();
 
         cancellationToken.ThrowIfCancellationRequested();
       }
-
-      return issues;
     }
 
     private static Issue CreateFromJson(JObject issueObject)
@@ -179,6 +173,12 @@ namespace IssuesApp.Data
     public void Dispose()
     {
       Thread.Sleep(1000);
+      myHttpClient.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+      await Task.Delay(1000);
       myHttpClient.Dispose();
     }
   }

@@ -8,7 +8,7 @@ namespace IssuesApp.Data
 {
   public interface IIssueService
   {
-    Task<IEnumerable<Issue>> GetIssuesAsync(IProgress<int> progress, CancellationToken cancellationToken);
+    IAsyncEnumerable<Issue> GetIssuesAsync(CancellationToken cancellationToken);
   }
 
   public class Issue
