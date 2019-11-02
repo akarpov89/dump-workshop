@@ -15,7 +15,15 @@ namespace IssuesApp.Data
         {
           switch (Split2(label, "-"))
           {
-            
+            case ("Area", var area):
+              subsystem = area;
+              break;
+            case ("IDE", var ideSubsystem):
+              subsystem = ideSubsystem;
+              break;
+            case ("New Language Feature", var langFeature):
+              languageFeature = langFeature;
+              break;
           }
         }
       }

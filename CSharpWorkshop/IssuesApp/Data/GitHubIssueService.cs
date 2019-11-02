@@ -18,7 +18,7 @@ namespace IssuesApp.Data
     // Select the following permissions for your GitHub Access Token:
     // - repo:status
     // - public_repo
-    private const string GitHubAccessToken = "c53e0fce24230a5aa33f0e29f6b11b9d8803c8e0";
+    private const string GitHubAccessToken = "478b248a7a9a405453c26b73f3e2f9031fec9eba";
 
     private readonly string myOwner;
     private readonly string myRepoName;
@@ -81,18 +81,12 @@ namespace IssuesApp.Data
         Labels = ExtractLabels((JArray) issueObject["labels"]["nodes"])
       };
 
-      IssueState ConvertToIssueState(string state)
+      IssueState ConvertToIssueState(string state) => state switch
       {
-        switch (state)
-        {
-          case "CLOSED":
-            return IssueState.Closed;
-          case "OPEN":
-            return IssueState.Open;
-          default:
-            return IssueState.Unknown;
-        }
-      }
+        "CLOSED" => IssueState.Closed,
+        "OPEN" => IssueState.Open,
+        _ => IssueState.Unknown
+      };
 
       string[] ExtractLabels(JArray labelsArray)
       {
