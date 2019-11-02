@@ -17,7 +17,7 @@ namespace IssuesApp.Data
     // Select the following permissions for your GitHub Access Token:
     // - repo:status
     // - public_repo
-    private const string GitHubAccessToken = "7bdb3e35664f4998959d2ba646edbd333537aef3";
+    private const string GitHubAccessToken = "7c1813f538fce8faf2f2b090ad659de3d3d9e063";
 
     private readonly string myOwner;
     private readonly string myRepoName;
@@ -32,7 +32,7 @@ namespace IssuesApp.Data
       myHttpClient.DefaultRequestHeaders.Add("User-Agent", "GiHubQuery App");
     }
 
-    public async Task<IEnumerable<Issue>> GetIssuesAsync(IProgress<int> progress, CancellationToken cancellationToken)
+    public async Task<IEnumerable<Issue>> GetIssuesAsync(IProgress<int>? progress, CancellationToken cancellationToken)
     {
       const int maxIssuesCount = 200;
       var issues = new List<Issue>();
@@ -79,11 +79,11 @@ namespace IssuesApp.Data
         Url = new Uri((string) issueObject["url"]),
         CreatedAt = (DateTimeOffset) issueObject["createdAt"],
         State = ConvertToIssueState((string) issueObject["state"]),
-        //Author = new Author
-        //{
-        //  Login = (string) issueObject["author"]["login"],
-        //  Url = new Uri((string) issueObject["author"]["url"])
-        //},
+        Author = new Author
+        {
+          Login = (string) issueObject["author"]["login"],
+          Url = new Uri((string) issueObject["author"]["url"])
+        },
         Labels = ExtractLabels((JArray) issueObject["labels"]["nodes"])
       };
 
@@ -130,7 +130,7 @@ namespace IssuesApp.Data
 
     private class GraphQLRequest
     {
-      [JsonProperty("query")] public string Query { get; set; }
+      [JsonProperty("query")] public string? Query { get; set; }
 
       [JsonProperty("variables")] public Dictionary<string, object> Variables { get; } = new Dictionary<string, object>();
 

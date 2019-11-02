@@ -29,7 +29,7 @@ else
             <tr>
                 <td style="max-width: 500px"><a href="@issue.Url" target="_blank">@issue.Title</a></td>
                 <td>@issue.Categorize()</td>
-                <td><a href="@issue.Author.Url" target="_blank">@issue.Author.Login</a></td>
+                <td><a href="@issue.Author?.Url" target="_blank">@issue.Author?.Login</a></td>
                 <td>@(issue.State.ToString())</td>
             </tr>
         }
