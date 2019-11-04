@@ -8,7 +8,10 @@ namespace IssuesApp.Data
 {
   public interface IIssueService
   {
-    IAsyncEnumerable<Issue> GetIssuesAsync(CancellationToken cancellationToken);
+    IAsyncEnumerable<Issue> GetIssuesAsync(
+      string ownerName,
+      string repoName,
+      CancellationToken cancellationToken = default);
   }
 
   public class Issue

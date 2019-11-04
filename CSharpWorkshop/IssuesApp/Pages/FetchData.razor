@@ -46,7 +46,7 @@
 
         try
         {
-            await foreach (var issue in IssueService.GetIssuesAsync(cts.Token).WithCancellation(cts2.Token))
+            await foreach (var issue in IssueService.GetIssuesAsync("dotnet", "roslyn", cts.Token).WithCancellation(cts2.Token))
             {
                 issues.Add(issue);
                 StateHasChanged();

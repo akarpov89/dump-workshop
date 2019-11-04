@@ -21,22 +21,20 @@ namespace IssuesApp.Data
     private static readonly string GitHubAccessToken = DecodeToken("NTBjZDc3OTRhYzAzYTRmMjYyYzQ2NzUwNmZlNWM0OGU2ODRlNjMwOA==");
     private static string DecodeToken(string base64EncodedToken) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedToken));
 
-    private readonly string myOwner;
-    private readonly string myRepoName;
     private readonly HttpClient myHttpClient;
 
-    public GitHubIssueService(string owner, string repoName)
+    public GitHubIssueService(HttpClient httpClient)
     {
-      myOwner = owner;
-      myRepoName = repoName;
-
-      myHttpClient = new HttpClient();
+      myHttpClient = httpClient;
       myHttpClient.DefaultRequestHeaders.Add("User-Agent", "GiHubQuery App");
     }
 
-    public async IAsyncEnumerable<Issue> GetIssuesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<Issue> GetIssuesAsync(
+      string ownerName,
+      string repoName,
+      [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-      var request = CreateRequest();
+      var request = CreateRequest(ownerName, repoName);
 
       while (true)
       {
@@ -132,7 +130,7 @@ namespace IssuesApp.Data
       public string ToJsonText() => JsonConvert.SerializeObject(this);
     }
 
-    private GraphQLRequest CreateRequest()
+    private static GraphQLRequest CreateRequest(string ownerName, string repoName)
     {
       const string pagedIssueQuery =
         @"query ($owner_name: String!, $repo_name: String!,  $start_cursor:String) {
@@ -165,8 +163,8 @@ namespace IssuesApp.Data
 
       var request = new GraphQLRequest {Query = pagedIssueQuery};
 
-      request.Variables["owner_name"] = myOwner;
-      request.Variables["repo_name"] = myRepoName;
+      request.Variables["owner_name"] = ownerName;
+      request.Variables["repo_name"] = repoName;
 
       return request;
     }
