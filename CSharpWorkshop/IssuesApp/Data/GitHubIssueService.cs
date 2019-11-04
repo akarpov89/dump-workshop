@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace IssuesApp.Data
 {
@@ -44,26 +43,26 @@ namespace IssuesApp.Data
         await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
 
         var responseBody = await PostAsync(request, cancellationToken).ConfigureAwait(false);
-        var results = JObject.Parse(responseBody);
+        var rootElement = JsonDocument.Parse(responseBody).RootElement;
 
-        var issuesResults = (JObject) results["data"]["repository"]["issues"];
-        foreach (var issueObject in (JArray) issuesResults["nodes"])
+        var issuesElement = rootElement.GetProperty("data").GetProperty("repository").GetProperty("issues");
+        foreach (var issueElement in issuesElement.GetProperty("nodes").EnumerateArray())
         {
-          var issue = CreateFromJson((JObject) issueObject);
+          var issue = CreateFromJson(issueElement);
           issues.Add(issue);
         }
 
         progress?.Report(issues.Count);
 
-        var issuesPageInfo = (JObject) issuesResults["pageInfo"];
-        var hasMorePages = (bool) issuesPageInfo["hasPreviousPage"];
+        var pageInfoElement = issuesElement.GetProperty("pageInfo");
+        var hasMorePages = pageInfoElement.GetProperty("hasPreviousPage").GetBoolean();
 
         if (!hasMorePages || issues.Count >= maxIssuesCount)
         {
           break;
         }
 
-        request.Variables["start_cursor"] = issuesPageInfo["startCursor"].ToString();
+        request.Variables["start_cursor"] = pageInfoElement.GetProperty("startCursor").GetString();
 
         cancellationToken.ThrowIfCancellationRequested();
       }
@@ -71,20 +70,20 @@ namespace IssuesApp.Data
       return issues;
     }
 
-    private static Issue CreateFromJson(JObject issueObject)
+    private static Issue CreateFromJson(JsonElement issueElement)
     {
       return new Issue
       {
-        Title = (string) issueObject["title"],
-        Url = new Uri((string) issueObject["url"]),
-        CreatedAt = (DateTimeOffset) issueObject["createdAt"],
-        State = ConvertToIssueState((string) issueObject["state"]),
+        Title = issueElement.GetProperty("title").GetString(),
+        Url = new Uri(issueElement.GetProperty("url").GetString()),
+        CreatedAt = issueElement.GetProperty("createdAt").GetDateTimeOffset(),
+        State = ConvertToIssueState(issueElement.GetProperty("state").GetString()),
         //Author = new Author
         //{
-        //  Login = (string) issueObject["author"]["login"],
-        //  Url = new Uri((string) issueObject["author"]["url"])
+        //  Login = issueElement.GetProperty("author").GetProperty("login").GetString(),
+        //  Url = new Uri(issueElement.GetProperty("author").GetProperty("url").GetString())
         //},
-        Labels = ExtractLabels((JArray) issueObject["labels"]["nodes"])
+        Labels = ExtractLabels(issueElement.GetProperty("labels").GetProperty("nodes"))
       };
 
       IssueState ConvertToIssueState(string state)
@@ -100,12 +99,12 @@ namespace IssuesApp.Data
         }
       }
 
-      string[] ExtractLabels(JArray labelsArray)
+      string[] ExtractLabels(JsonElement labelsElement)
       {
-        var result = new string[labelsArray.Count];
-        for (var index = 0; index < labelsArray.Count; index++)
+        var result = new string[labelsElement.GetArrayLength()];
+        for (var index = 0; index < result.Length; index++)
         {
-          result[index] = (string) labelsArray[index]["name"];
+          result[index] = labelsElement[index].GetProperty("name").GetString();
         }
 
         return result;
@@ -130,11 +129,11 @@ namespace IssuesApp.Data
 
     private class GraphQLRequest
     {
-      [JsonProperty("query")] public string Query { get; set; }
+      [JsonPropertyName("query")] public string Query { get; set; }
 
-      [JsonProperty("variables")] public Dictionary<string, object> Variables { get; } = new Dictionary<string, object>();
+      [JsonPropertyName("variables")] public Dictionary<string, object> Variables { get; } = new Dictionary<string, object>();
 
-      public string ToJsonText() => JsonConvert.SerializeObject(this);
+      public string ToJsonText() => JsonSerializer.Serialize(this);
     }
 
     private static GraphQLRequest CreateRequest(string ownerName, string repoName)
