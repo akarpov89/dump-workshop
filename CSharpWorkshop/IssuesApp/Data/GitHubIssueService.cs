@@ -11,14 +11,15 @@ using Newtonsoft.Json.Linq;
 
 namespace IssuesApp.Data
 {
-  public class GitHubIssueService : IIssueService, IDisposable, IAsyncDisposable
+  public class GitHubIssueService : IIssueService
   {
     // Follow these steps to create a GitHub Access Token
     // https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/#creating-a-token
     // Select the following permissions for your GitHub Access Token:
     // - repo:status
     // - public_repo
-    private const string GitHubAccessToken = "c53e0fce24230a5aa33f0e29f6b11b9d8803c8e0";
+    private static readonly string GitHubAccessToken = DecodeToken("NTBjZDc3OTRhYzAzYTRmMjYyYzQ2NzUwNmZlNWM0OGU2ODRlNjMwOA==");
+    private static string DecodeToken(string base64EncodedToken) => Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedToken));
 
     private readonly string myOwner;
     private readonly string myRepoName;
@@ -168,18 +169,6 @@ namespace IssuesApp.Data
       request.Variables["repo_name"] = myRepoName;
 
       return request;
-    }
-
-    public void Dispose()
-    {
-      Thread.Sleep(1000);
-      myHttpClient.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-      await Task.Delay(1000);
-      myHttpClient.Dispose();
     }
   }
 }

@@ -1,4 +1,5 @@
 ﻿@page "/fetchdata"
+@inject IIssueService IssueService
 
 @using System.Threading
 @using IssuesApp.Data
@@ -11,31 +12,31 @@
 
 <table class="table">
     <thead>
-    <tr>
-        <th>Title</th>
-        <th>Category</th>
-        <th>Author</th>
-        <th>Status</th>
-    </tr>
+        <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Author</th>
+            <th>Status</th>
+        </tr>
     </thead>
     <tbody>
-    @foreach (var issue in issues)
-    {
-        <tr>
-            <td style="max-width: 500px"><a href="@issue.Url" target="_blank">@issue.Title</a></td>
-            <td>@issue.Categorize()</td>
-            <td><a href="@issue.Author?.Url" target="_blank">@issue.Author?.Login</a></td>
-            <td>@issue.State.ToString()</td>
-        </tr>
-    }
+        @foreach (var issue in issues)
+        {
+            <tr>
+                <td style="max-width: 500px"><a href="@issue.Url" target="_blank">@issue.Title</a></td>
+                <td>@issue.Categorize()</td>
+                <td><a href="@issue.Author?.Url" target="_blank">@issue.Author?.Login</a></td>
+                <td>@issue.State.ToString()</td>
+            </tr>
+        }
     </tbody>
 </table>
 
 @code {
-    List<Issue> issues = new List<Issue>();
+    readonly List<Issue> issues = new List<Issue>();
 
-    CancellationTokenSource cts;
-    CancellationTokenSource cts2;
+    CancellationTokenSource? cts;
+    CancellationTokenSource? cts2;
 
     private async void StartLoading()
     {
@@ -45,9 +46,7 @@
 
         try
         {
-            await using var issueService = new GitHubIssueService("dotnet", "roslyn");
-
-            await foreach (var issue in issueService.GetIssuesAsync(cts.Token).WithCancellation(cts2.Token))
+            await foreach (var issue in IssueService.GetIssuesAsync(cts.Token).WithCancellation(cts2.Token))
             {
                 issues.Add(issue);
                 StateHasChanged();
@@ -60,10 +59,10 @@
 
     private void CancelLoading()
     {
-        cts.Cancel();
+        cts?.Cancel();
     }
     private void CancelLoading2()
     {
-        cts2.Cancel();
+        cts2?.Cancel();
     }
 }
