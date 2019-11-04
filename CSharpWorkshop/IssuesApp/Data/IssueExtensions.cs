@@ -15,13 +15,13 @@ namespace IssuesApp.Data
         {
           switch (Split2(label, "-"))
           {
-            case ("Area", var area):
+            case ("AREA", var area):
               subsystem = area;
               break;
             case ("IDE", var ideSubsystem):
               subsystem = ideSubsystem;
               break;
-            case ("New Language Feature", var langFeature):
+            case ("NEW LANGUAGE FEATURE", var langFeature):
               languageFeature = langFeature;
               break;
           }
@@ -36,7 +36,7 @@ namespace IssuesApp.Data
       var separatorIndex = input.IndexOf(separator, StringComparison.OrdinalIgnoreCase);
       if (separatorIndex > 0)
       {
-        return (input.Substring(0, separatorIndex).Trim(),
+        return (input.Substring(0, separatorIndex).Trim().ToUpper(),
                 input.Substring(separatorIndex + 1).Trim());
       }
 
