@@ -62,7 +62,7 @@ else
 
         try
         {
-            issues = await IssueService.GetIssuesAsync(progress, cts.Token);
+            issues = await IssueService.GetIssuesAsync("dotnet", "roslyn", progress, cts.Token);
             StateHasChanged();
         }
         catch (OperationCanceledException)
