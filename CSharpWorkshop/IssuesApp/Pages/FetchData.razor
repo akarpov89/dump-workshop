@@ -1,4 +1,5 @@
 ﻿@page "/fetchdata"
+@inject IIssueService IssueService
 
 @using System.Threading
 @using IssuesApp.Data
@@ -61,11 +62,8 @@ else
 
         try
         {
-            using (var issueService = new GitHubIssueService("dotnet", "roslyn"))
-            {
-                issues = await issueService.GetIssuesAsync(progress, cts.Token);
-                StateHasChanged();
-            }
+            issues = await IssueService.GetIssuesAsync(progress, cts.Token);
+            StateHasChanged();
         }
         catch (OperationCanceledException)
         {
